@@ -1,7 +1,7 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-class ChatGPT_WPML_Translator {
+class AI_Powered_WPML_Translator {
 
     public function __construct() {
         add_action('add_meta_boxes', [$this, 'add_translate_metabox']);
@@ -12,8 +12,8 @@ class ChatGPT_WPML_Translator {
 
     public function add_settings_page() {
         add_options_page(
-            'ChatGPT & Gemini WPML Translator',
-            'ChatGPT & Gemini WPML',
+            'AI Translator for WPML',
+            'AI Translator for WPML',
             'manage_options',
             'chatgpt-wpml-translator',
             [$this, 'settings_page_html']
@@ -21,15 +21,24 @@ class ChatGPT_WPML_Translator {
     }
 
     public function register_settings() {
-        register_setting('chatgpt_wpml_options', 'chatgpt_wpml_service');
-        register_setting('chatgpt_wpml_options', 'chatgpt_wpml_api_key');
-        register_setting('chatgpt_wpml_options', 'chatgpt_wpml_gemini_api_key');
+        register_setting('chatgpt_wpml_options', 'chatgpt_wpml_service', [
+            'sanitize_callback' => 'sanitize_text_field',
+            'type' => 'string',
+        ]);
+        register_setting('chatgpt_wpml_options', 'chatgpt_wpml_api_key', [
+            'sanitize_callback' => 'sanitize_text_field',
+            'type' => 'string',
+        ]);
+        register_setting('chatgpt_wpml_options', 'chatgpt_wpml_gemini_api_key', [
+            'sanitize_callback' => 'sanitize_text_field',
+            'type' => 'string',
+        ]);
     }
 
     public function settings_page_html() {
         ?>
         <div class="wrap">
-            <h1>ChatGPT & Gemini WPML Translator</h1>
+            <h1>AI Translator for WPML</h1>
             <form method="POST" action="options.php">
                 <?php
                 settings_fields('chatgpt_wpml_options');
@@ -51,14 +60,14 @@ class ChatGPT_WPML_Translator {
                     <tr valign="top">
                         <th scope="row"><label for="chatgpt_wpml_api_key">OpenAI API Key</label></th>
                         <td>
-                            <input type="text" id="chatgpt_wpml_api_key" name="chatgpt_wpml_api_key" value="<?php echo $openai_key; ?>" size="50"/>
+                            <input type="text" id="chatgpt_wpml_api_key" name="chatgpt_wpml_api_key" value="<?php echo esc_attr($openai_key); ?>" size="50"/>
                             <p class="description">Required if using OpenAI. Uses the <strong>gpt-4o-mini</strong> model.</p>
                         </td>
                     </tr>
                     <tr valign="top">
                         <th scope="row"><label for="chatgpt_wpml_gemini_api_key">Google Gemini API Key</label></th>
                         <td>
-                            <input type="text" id="chatgpt_wpml_gemini_api_key" name="chatgpt_wpml_gemini_api_key" value="<?php echo $gemini_key; ?>" size="50"/>
+                            <input type="text" id="chatgpt_wpml_gemini_api_key" name="chatgpt_wpml_gemini_api_key" value="<?php echo esc_attr($gemini_key); ?>" size="50"/>
                             <p class="description">Required if using Google Gemini. Uses the <strong>gemini-2.5-flash</strong> model. Get one from Google AI Studio.</p>
                         </td>
                     </tr>
@@ -88,11 +97,13 @@ class ChatGPT_WPML_Translator {
         $api_key = ($service == 'gemini') ? get_option('chatgpt_wpml_gemini_api_key') : get_option('chatgpt_wpml_api_key');
 
         if (empty($api_key)) {
-            echo '<p style="color:red;">Please set your API key in <a href="'.admin_url('options-general.php?page=chatgpt-wpml-translator').'">Settings → ChatGPT & Gemini WPML</a>.</p>';
+            echo '<p style="color:red;">Please set your API key in <a href="'.esc_url(admin_url('options-general.php?page=chatgpt-wpml-translator')).'" >Settings → AI Translator for WPML</a>.</p>';
             return;
         }
 
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's filters
         $languages = apply_filters('wpml_active_languages', NULL, ['skip_missing' => 0]);
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's filters
         $current_lang = apply_filters('wpml_post_language_details', NULL, $post->ID)['language_code'] ?? '';
 
         if (!$languages) {
@@ -106,14 +117,14 @@ class ChatGPT_WPML_Translator {
         echo '<select id="chatgpt-wpml-lang" style="width:100%;">';
         foreach ($languages as $code => $lang) {
             if ($code !== $current_lang) {
-                echo '<option value="'.$code.'">'.$lang['native_name'].'</option>';
+                echo '<option value="'.esc_attr($code).'">'.esc_html($lang['native_name']).'</option>';
             }
         }
         echo '</select>';
         
         echo '<div id="chatgpt-wpml-token-estimate" style="margin-top:10px; font-style: italic; font-size: 12px; color: #666;">Calculating tokens...</div>';
         
-        echo '<button type="button" id="chatgpt-wpml-btn" class="button button-primary" style="margin-top:10px;">Translate with ' . $service_name . '</button>';
+        echo '<button type="button" id="chatgpt-wpml-btn" class="button button-primary" style="margin-top:10px;">Translate with ' . esc_html($service_name) . '</button>';
         echo '<div id="chatgpt-wpml-status" style="margin-top:10px; font-size:12px;"></div>';
 
         wp_nonce_field('chatgpt_wpml_translate', 'chatgpt_wpml_nonce');
@@ -174,7 +185,7 @@ class ChatGPT_WPML_Translator {
             $('#chatgpt-wpml-btn').on('click', function(){
                 const btn = $(this);
                 const lang = $('#chatgpt-wpml-lang').val();
-                const post_id = <?php echo $post->ID; ?>;
+                const post_id = <?php echo esc_js($post->ID); ?>;
                 const nonce = $('#chatgpt_wpml_nonce').val();
                 const statusDiv = $('#chatgpt-wpml-status');
                 
@@ -203,9 +214,10 @@ class ChatGPT_WPML_Translator {
 
     public function handle_ajax_translation() {
         check_ajax_referer('chatgpt_wpml_translate', 'nonce');
-        $post_id = intval($_POST['post_id']);
-        $target_lang = sanitize_text_field($_POST['target_lang']);
+        $post_id = isset($_POST['post_id']) ? intval(wp_unslash($_POST['post_id'])) : 0;
+        $target_lang = isset($_POST['target_lang']) ? sanitize_text_field(wp_unslash($_POST['target_lang'])) : '';
 
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's filters
         $source_lang = apply_filters('wpml_post_language_details', NULL, $post_id)['language_code'];
         $content = get_post_field('post_content', $post_id);
         $title   = get_post_field('post_title', $post_id);
@@ -223,6 +235,7 @@ class ChatGPT_WPML_Translator {
         $translation = $translation_result['translation'];
         $usage_message = $translation_result['message'];
 
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's filters
         $translated_post_id = apply_filters('wpml_object_id', $post_id, 'post', false, $target_lang);
 
         if (!$translated_post_id) {
@@ -233,9 +246,11 @@ class ChatGPT_WPML_Translator {
                 'post_type'    => get_post_type($post_id)
             ]);
 
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's actions/filters
             do_action('wpml_set_element_language_details', [
                 'element_id'    => $translated_post_id,
                 'element_type'  => 'post_' . get_post_type($post_id),
+                // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's filters
                 'trid'          => apply_filters('wpml_element_trid', NULL, $post_id, 'post_' . get_post_type($post_id)),
                 'language_code' => $target_lang,
                 'source_language_code' => $source_lang

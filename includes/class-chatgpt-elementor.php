@@ -18,11 +18,14 @@ class ChatGPT_WPML_Elementor {
         $post_id = get_the_ID();
         if ( ! $post_id ) return;
 
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's filters
         $languages = apply_filters('wpml_active_languages', NULL, ['skip_missing' => 0]);
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's filters
         $current_lang = apply_filters('wpml_post_language_details', NULL, $post_id)['language_code'] ?? '';
         
         // **MODIFIED:** Clarified service name
         $service_name = ($service == 'gemini') ? 'Gemini (2.5 Flash)' : 'OpenAI (GPT-4o mini)';
+        $nonce = wp_create_nonce('chatgpt_wpml_translate_elementor');
         ?>
         <style>
         #chatgpt-elementor-panel {
@@ -61,11 +64,14 @@ class ChatGPT_WPML_Elementor {
             <strong>AI WPML Translator</strong><br>
             <select id="chatgpt-elementor-lang">
                 <?php foreach ($languages as $code => $lang) {
-                    if ($code !== $current_lang) echo '<option value="'.$code.'">'.$lang['native_name'].'</option>';
+                    if (
+                        $code !== $current_lang
+                    ) echo '<option value="'.esc_attr($code).'">'.esc_html($lang['native_name']).'</option>';
                 } ?>
             </select>
-            <button id="chatgpt-elementor-btn">Translate with <?php echo $service_name; ?></button>
+            <button id="chatgpt-elementor-btn">Translate with <?php echo esc_html($service_name); ?></button>
             <div id="chatgpt-elementor-status"></div>
+            <input type="hidden" id="chatgpt-elementor-nonce" value="<?php echo esc_attr($nonce); ?>">
         </div>
 
         <script>
@@ -75,6 +81,7 @@ class ChatGPT_WPML_Elementor {
                 const lang = $('#chatgpt-elementor-lang').val();
                 const post_id = elementor.config.document.id;
                 const statusDiv = $('#chatgpt-elementor-status');
+                const nonce = $('#chatgpt-elementor-nonce').val();
                 
                 statusDiv.text('Translating...');
                 btn.prop('disabled', true);
@@ -83,6 +90,7 @@ class ChatGPT_WPML_Elementor {
                     action: 'chatgpt_wpml_translate_elementor',
                     post_id: post_id,
                     target_lang: lang,
+                    nonce: nonce,
                 }, function(res){
                      if (res.success) {
                         let links = ' <br><a href="'+res.data.edit_link+'" target="_blank">Edit</a> | <a href="'+res.data.view_link+'" target="_blank">View</a>';
@@ -100,9 +108,13 @@ class ChatGPT_WPML_Elementor {
     }
 
     public function handle_elementor_translation() {
-        $post_id = intval($_POST['post_id']);
-        $target_lang = sanitize_text_field($_POST['target_lang']);
+        // Nonce verification for security
+        check_ajax_referer('chatgpt_wpml_translate_elementor', 'nonce');
 
+        $post_id = isset($_POST['post_id']) ? intval(wp_unslash($_POST['post_id'])) : 0;
+        $target_lang = isset($_POST['target_lang']) ? sanitize_text_field(wp_unslash($_POST['target_lang'])) : '';
+
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's filters
         $source_lang = apply_filters('wpml_post_language_details', NULL, $post_id)['language_code'];
         $content = get_post_field('post_content', $post_id);
         $title   = get_post_field('post_title', $post_id);
@@ -122,6 +134,7 @@ class ChatGPT_WPML_Elementor {
         $translation = $translation_result['translation'];
         $usage_message = $translation_result['message'];
 
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's filters
         $translated_post_id = apply_filters('wpml_object_id', $post_id, 'post', false, $target_lang);
 
         if (!$translated_post_id) {
@@ -132,9 +145,11 @@ class ChatGPT_WPML_Elementor {
                 'post_type'    => get_post_type($post_id)
             ]);
 
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's actions/filters
             do_action('wpml_set_element_language_details', [
                 'element_id'    => $translated_post_id,
                 'element_type'  => 'post_' . get_post_type($post_id),
+                // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Using WPML's filters
                 'trid'          => apply_filters('wpml_element_trid', NULL, $post_id, 'post_' . get_post_type($post_id)),
                 'language_code' => $target_lang,
                 'source_language_code' => $source_lang

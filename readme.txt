@@ -1,24 +1,24 @@
-=== ChatGPT WPML Translator ===
-Contributors: ali  
+=== AI Translator for WPML ===
+Contributors: Ali ABZ
 Tags: translation, wpml, openai, chatgpt, multilingual  
 Requires at least: 6.0  
-Tested up to: 6.7  
+Tested up to: 6.8  
 Requires PHP: 7.4  
-Stable tag: 1.0.0  
+Stable tag: 1.3.6
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
-Automatically translate your WordPress posts into multiple languages using WPML and OpenAI’s ChatGPT.
+Automatically translate your WordPress posts into multiple languages using WPML, OpenAI (ChatGPT), and Google Gemini.
 
 == Description ==
 
-ChatGPT WPML Translator bridges WPML with the OpenAI API, automatically translating posts into all active languages when you publish or update a post.
+AI-Powered WPML Translator bridges WPML with the OpenAI and Google Gemini APIs, automatically translating posts into all active languages when you publish or update a post.
 
 **Main Features:**
 * Works with WPML’s language management system.  
 * Automatically translates posts when published or updated.  
-* Uses OpenAI’s ChatGPT (`gpt-4o-mini`) model for high-quality translations.  
-* Separate settings page for managing your API key.  
+* Uses OpenAI’s ChatGPT (`gpt-4o-mini`) or Google Gemini (`gemini-2.5-flash`) models for high-quality translations.  
+* Separate settings page for managing API keys.  
 * Updates existing translations or creates new ones when needed.  
 
 **How it works:**
@@ -30,7 +30,7 @@ ChatGPT WPML Translator bridges WPML with the OpenAI API, automatically translat
 
 1. Upload the plugin folder `chatgpt-wpml-translator` to the `/wp-content/plugins/` directory.  
 2. Activate the plugin through the **Plugins** menu in WordPress.  
-3. Go to **Settings → ChatGPT WPML** and enter your OpenAI API key.  
+3. Go to **Settings → AI-Powered WPML** and enter your OpenAI and/or Gemini API keys.  
 4. Make sure WPML is installed and configured with your desired languages.  
 5. Create or update a post — translations will be generated automatically.  
 
@@ -42,8 +42,8 @@ By default, it handles regular posts. You can easily extend it to support custom
 = Does it cost money to use? =  
 Using ChatGPT translations requires an OpenAI API key and will incur API usage costs according to your OpenAI plan.  
 
-= Which OpenAI model is used? =  
-Currently uses the `gpt-4o-mini` model for best balance of quality and cost.  
+= Which AI model is used? =  
+Currently uses the `gpt-4o-mini` model (OpenAI) or `gemini-2.5-flash` model (Google Gemini) for best balance of quality and cost.  
 
 = Can I manually trigger translations? =  
 Not yet, but a “Translate Now” button can be added in a future update.  
